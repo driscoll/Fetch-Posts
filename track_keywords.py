@@ -14,6 +14,7 @@ import datetime
 import pymongo
 import requests
 import socket
+import time
 import webbrowser
 from urlparse import parse_qs
 from requests_oauthlib import OAuth1, OAuth1Session
@@ -258,6 +259,10 @@ if __name__=="__main__":
                             type=str,
                             default='',
                             help='Path to file with user IDs, one per line')
+    parser.add_argument('--retries', 
+                            type=int,
+                            default=0,
+                            help="Maximum retries upon error") 
     parser.add_argument('--tracer', 
                             type=int,
                             default=0,
@@ -300,7 +305,8 @@ if __name__=="__main__":
 
     # TODO
     # these lines should be in a loop that catches errors
-    while True:
+    retries = 0
+    while retries <= args.retries: 
         sys.stderr.write('\nAuthorizing tracker with Twitter...')
         sesh = get_session(consumer_key, 
                             consumer_secret, 
@@ -315,10 +321,14 @@ if __name__=="__main__":
                 print cleantweet
         except socket.error, (value, message):
             sys.stderr.write(message)
-            sys.stderr.write('\nRestarting tracker...\n')
+        except KeyboardInterrupt:
+            sys.exit(1)
         except:
             sys.stderr.write('Unknown exception')
-            sys.stderr.write('\nRestarting tracker...\n')
+        retries += 1
+        sys.stderr.write('\nTrying to restart tracker ({0})...\n'.format(retries))
+    sys.stderr.write('Nope. Maximum retries reached.\n')
+
 
 
 
