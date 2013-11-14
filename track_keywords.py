@@ -13,6 +13,7 @@ import time
 import datetime
 import pymongo
 import requests
+import socket
 import webbrowser
 from urlparse import parse_qs
 from requests_oauthlib import OAuth1, OAuth1Session
@@ -181,8 +182,8 @@ def dump_to_mongo(tracker, collection):
         # Insert each json as an entry in the mongodb collection
         entry = collection.insert(tweet)
         
-def dump_to_stdout(tracker, encoding='utf-16', tracer=0):
-    """ Loop over tweets in tracker and print them to stdout 
+def process(tracker, encoding='utf-16', tracer=0):
+    """ Yield tweets from tracker stream
         If tracer a non-zero integer, then the text of 
             every tracer-th tweet will be printed to stderr
     """
@@ -194,7 +195,10 @@ def dump_to_stdout(tracker, encoding='utf-16', tracer=0):
 
     for n, tweet in enumerate(tracker):
         j = json.dumps(tweet, encoding=encoding)
-        print j
+        # Any other pre-processing can happen here
+        # For example, removing unwanted keys to shrink the dict
+        yield j
+
         minuteCounter += 1
 
         # Print tracer to stderr
@@ -294,13 +298,27 @@ if __name__=="__main__":
                     sys.stderr.write(uid)
                     sys.stderr.write('\n')
 
-    sys.stderr.write('\nAuthorizing tracker with Twitter...')
-    sesh = get_session(consumer_key, 
-                        consumer_secret, 
-                        access_token, 
-                        access_token_secret)
-    stream = track(sesh, keywords, user_ids)
-    sys.stderr.write('done!\n')
+    # TODO
+    # these lines should be in a loop that catches errors
+    while True:
+        sys.stderr.write('\nAuthorizing tracker with Twitter...')
+        sesh = get_session(consumer_key, 
+                            consumer_secret, 
+                            access_token, 
+                            access_token_secret)
+        stream = track(sesh, keywords, user_ids)
+        sys.stderr.write('done!\n')
 
-    sys.stderr.write('\nStarting tracker...\n')
-    dump_to_stdout(stream, tracer=args.tracer)
+        sys.stderr.write('\nStarting tracker...\n')
+        try:
+            for cleantweet in process(stream, tracer=args.tracer):
+                print cleantweet
+        except socket.error, (value, message):
+            sys.stderr.write(message)
+            sys.stderr.write('\nRestarting tracker...\n')
+        except:
+            sys.stderr.write('Unknown exception')
+            sys.stderr.write('\nRestarting tracker...\n')
+
+
+
