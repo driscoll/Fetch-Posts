@@ -335,8 +335,8 @@ if __name__=="__main__":
         except socket.error, (value, message):
             sys.stderr.write(message)
             sys.stderr.write('\n')
-        #except KeyboardInterrupt:
-        #    sys.exit(1)
+        except KeyboardInterrupt:
+            sys.exit(1)
         except:
             sys.stderr.write('Unknown exception.\n')
         retries += 1
