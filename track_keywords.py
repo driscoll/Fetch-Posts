@@ -17,6 +17,7 @@ import sys
 import json
 import time
 import datetime
+import math
 import pymongo
 import requests
 import socket
@@ -315,6 +316,10 @@ if __name__=="__main__":
     # which is why there is a maximum number of retries
     retries = 0
     while retries <= args.retries: 
+        if retries:
+            naptime = int(round(math.log(retries)) * 10)
+            sys.stderr.write('Sleeping for {0} seconds...\n'.format(naptime))
+            time.sleep(naptime)
         sys.stderr.write('\nAuthorizing tracker with Twitter...')
         sesh = get_session(consumer_key, 
                             consumer_secret, 
@@ -329,12 +334,13 @@ if __name__=="__main__":
                 print cleantweet
         except socket.error, (value, message):
             sys.stderr.write(message)
-        except KeyboardInterrupt:
-            sys.exit(1)
+            sys.stderr.write('\n')
+        #except KeyboardInterrupt:
+        #    sys.exit(1)
         except:
-            sys.stderr.write('Unknown exception')
+            sys.stderr.write('Unknown exception.\n')
         retries += 1
-        sys.stderr.write('\nTrying to restart tracker ({0})...\n'.format(retries))
+        sys.stderr.write('Trying to restart tracker ({0})...\n'.format(retries))
     sys.stderr.write('Nope. Maximum retries reached.\n')
 
 
