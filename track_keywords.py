@@ -2,6 +2,12 @@
 """
 Track keywords on Twitter using the public Streaming API
 
+TODO
+    Add hooks for extracting info about incoming tweets
+        e.g., identifying new users
+    Better monitoring
+        E-mail admins on error
+
 2013
 
 """
@@ -303,8 +309,10 @@ if __name__=="__main__":
                     sys.stderr.write(uid)
                     sys.stderr.write('\n')
 
-    # TODO
-    # these lines should be in a loop that catches errors
+    # The purpose of this loop is to restart the tracker
+    # when an error comes down the stream.
+    # It's pretty dumb about which errors it catches
+    # which is why there is a maximum number of retries
     retries = 0
     while retries <= args.retries: 
         sys.stderr.write('\nAuthorizing tracker with Twitter...')
