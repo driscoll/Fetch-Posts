@@ -101,6 +101,32 @@ def authorize(consumer_key, consumer_secret):
 # API wrappers
 #
 
+def track_sample(twitter):
+    """Yields tweets one dict at a time from "sample" endpoint
+        See: https://dev.twitter.com/docs/api/1.1/get/statuses/sample
+
+        twitter: OAuth1Session object authenticated already
+    """
+
+    # Prepare for GET request
+    sample_url = "https://stream.twitter.com/1.1/statuses/sample.json"
+
+    # Create Request.get object
+    r = twitter.get(url=sample_url, params={}, stream=True)
+
+    # Iterate over the request
+    for line in r.iter_lines():
+        if line :
+            try:
+                # TODO 
+                # Sometimes it returns a "disconnect" obj 
+                # before closing the stream
+                tweet = json.loads(line)
+                yield tweet
+            except ValueError:
+                # Couldn't construct a valid tweet
+                pass
+
 def track(twitter, keywords=[], user_ids=[]):
     """Iterator that yields tweets as dicts one at a time
 
@@ -258,6 +284,10 @@ if __name__=="__main__":
                             type=str,
                             default=u"",
                             help="Access Token Secret")
+    parser.add_argument('--sample',
+                            action='store_true',
+                            default=False,
+                            help="Use Twitter's sample endpoint")
     parser.add_argument('--keywords',
                             type=str,
                             default='',
@@ -282,8 +312,8 @@ if __name__=="__main__":
     access_token = args.resourcekey 
     access_token_secret = args.resourcesecret
 
-    if not args.keywords and not args.userids:
-        sys.stderr.write("Nothing to track! Please supply keywords or user IDs.\n")
+    if not args.keywords and not args.userids and not args.sample:
+        sys.stderr.write("Nothing to track! Please supply keywords or user IDs or use the Twitter sample.\n")
         sys.exit(1)
 
     keywords = []
@@ -325,7 +355,12 @@ if __name__=="__main__":
                             consumer_secret, 
                             access_token, 
                             access_token_secret)
-        stream = track(sesh, keywords, user_ids)
+        if args.sample:
+            sys.stderr.write('\nReading from the Twitter sample endpoint...')
+            stream = track_sample(sesh)
+        else:
+            sys.stderr.write('\nReading from the Twitter filter endpoint...')
+            stream = track(sesh, keywords, user_ids)
         sys.stderr.write('done!\n')
 
         sys.stderr.write('\nStarting tracker...\n')
@@ -333,6 +368,7 @@ if __name__=="__main__":
             for cleantweet in process(stream, tracer=args.tracer):
                 print cleantweet
         except socket.error, (value, message):
+            sys.stderr.write(value)
             sys.stderr.write(message)
             sys.stderr.write('\n')
         except KeyboardInterrupt:
@@ -342,7 +378,3 @@ if __name__=="__main__":
         retries += 1
         sys.stderr.write('Trying to restart tracker ({0})...\n'.format(retries))
     sys.stderr.write('Nope. Maximum retries reached.\n')
-
-
-
-
