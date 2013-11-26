@@ -229,9 +229,11 @@ def process(tracker, encoding='utf-16', tracer=0):
 
     for n, tweet in enumerate(tracker):
         j = json.dumps(tweet, encoding=encoding)
-        # Any other pre-processing can happen here
-        # For example, removing unwanted keys to shrink the dict
-        yield j
+        # Check that this is a tweet
+        if not u'delete' in j:
+            # Any other pre-processing can happen here
+            # For example, removing unwanted keys to shrink the dict
+            yield j
 
         minuteCounter += 1
 
