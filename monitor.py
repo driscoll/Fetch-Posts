@@ -40,7 +40,7 @@ if __name__=="__main__":
     wm = pyinotify.WatchManager()
     notifier = pyinotify.Notifier(wm, read_freq=60) 
 
-    for n, fn in enumerate(outfiles):
+    for n, fn in enumerate(fileinput.input()):
         nextcolor = (n % 6) + 1
         wm.watch_transient_file(fn, pyinotify.IN_MODIFY, ProcessTransientFile)
 
