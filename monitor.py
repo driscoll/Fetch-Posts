@@ -11,10 +11,9 @@ Kevin Driscoll, 2014
 """
 
 import colors
+import fileinput
 import pyinotify
-import sys 
 import time
-from collections import Counter
 
 global nextcolor
 
