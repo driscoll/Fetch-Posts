@@ -11,8 +11,8 @@ Kevin Driscoll, 2014
 """
 
 import colors
-import fileinput
 import pyinotify
+import sys
 import time
 
 global nextcolor
@@ -23,24 +23,30 @@ class ProcessTransientFile(pyinotify.ProcessEvent):
         global nextcolor
         self.fg = nextcolor
         self.lastupdate = time.time() 
+        self.freq = 0
 
     def process_IN_MODIFY(self, event):
         now = time.time()
         report = "{0}s".format(str(round(now-self.lastupdate, 2)))
         self.lastupdate = now
-        print colors.color(' '.join((event.name, report)), fg=self.fg)
+        self.freq += 1
+        if not self.freq % 50:
+            print colors.color(' '.join((event.name, report)), fg=self.fg)
 
     def process_default(self, event):
         print 'default: ', event.maskname
 
-
 if __name__=="__main__":
 
+    filenames = sys.argv[1:]
     wm = pyinotify.WatchManager()
-    notifier = pyinotify.Notifier(wm, read_freq=60) 
+    notifier = pyinotify.Notifier(wm)
 
-    for n, fn in enumerate(fileinput.input()):
+    print "Tracking..."
+    for n, fn in enumerate(filenames):
+        print fn
         nextcolor = (n % 6) + 1
         wm.watch_transient_file(fn, pyinotify.IN_MODIFY, ProcessTransientFile)
+    print
 
     notifier.loop()
