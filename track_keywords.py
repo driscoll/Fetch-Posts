@@ -8,6 +8,9 @@ TODO
     Better monitoring
         E-mail admins on error
 
+Limitations:
+    Max 400 keywords, 5000 users
+        https://dev.twitter.com/discussions/4120
 2013
 
 """
@@ -337,7 +340,7 @@ if __name__=="__main__":
             for line in f:
                 uid = line.strip()
                 if uid:
-                    keywords.append(uid)
+                    user_ids.append(uid)
                     sys.stderr.write('\t')
                     sys.stderr.write(uid)
                     sys.stderr.write('\n')
